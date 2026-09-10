@@ -8,7 +8,7 @@ on:
 env:
   # 源码仓库与分支（FanchmWrt）
   OPENWRT_REPO: fanchmwrt/fanchmwrt
-  OPENWRT_BRANCH: main
+  OPENWRT_BRANCH: fanchmwrt-25.12.4
   # 编译产物上传保留天数
   UPLOAD_RELEASE: false
   UPLOAD_FIRMWARE: true
