@@ -2,17 +2,10 @@ name: Build FanchmWrt for WNDR4300
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: 0 17 * * 0
 
 env:
-  # 源码仓库与分支（FanchmWrt）
   OPENWRT_REPO: fanchmwrt/fanchmwrt
   OPENWRT_BRANCH: fanchmwrt-25.12.4
-  # 编译产物上传保留天数
-  UPLOAD_RELEASE: false
-  UPLOAD_FIRMWARE: true
-  FIRMWARE_TAG: FanchmWrt-WNDR4300
 
 jobs:
   build:
@@ -51,6 +44,11 @@ jobs:
         run: |
           git clone --depth 1 --branch $OPENWRT_BRANCH https://github.com/$OPENWRT_REPO.git openwrt
           cd openwrt
+          # 确认并添加 FanchmWrt 官方插件源（应用中心、FWX AppFilter 都在这里）
+          if ! grep -q "fanchmwrt-packages" feeds.conf.default; then
+            echo "src-git fanchmwrt_packages https://github.com/fanchmwrt/fanchmwrt-packages.git" >> feeds.conf.default
+          fi
+          cat feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
@@ -64,13 +62,11 @@ jobs:
         run: |
           cd openwrt
           make download -j8
-          find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
 
       - name: Compile firmware
         run: |
           cd openwrt
-          echo -e "$(nproc) thread compile"
           make -j$(nproc) || make -j1 V=s
 
       - name: Organize firmware files
@@ -79,9 +75,9 @@ jobs:
           rm -rf packages
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
-      - name: Upload firmware to artifact
+      - name: Upload firmware
         uses: actions/upload-artifact@main
         with:
-          name: ${{ env.FIRMWARE_TAG }}
+          name: FanchmWrt-WNDR4300
           path: ${{ env.FIRMWARE }}
           retention-days: 7
